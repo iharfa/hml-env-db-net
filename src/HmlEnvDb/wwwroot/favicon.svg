@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+    <clipPath id="frame">
+      <rect width="64" height="64" rx="13"/>
+    </clipPath>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="url(#g)"/>
+  <g clip-path="url(#frame)">
+    <!-- Deliberately two shapes only. A second wave and any sun rays merge into
+         a smudge at 16px, which is where a favicon actually lives. -->
+    <circle cx="32" cy="21" r="11" fill="#ffffff"/>
+    <path d="M2 45c7.5 0 7.5 5 15 5s7.5-5 15-5 7.5 5 15 5 7.5-5 15-5" fill="none"
+          stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>

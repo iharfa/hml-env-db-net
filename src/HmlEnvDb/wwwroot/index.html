@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live air quality, weather, tide and reef conditions for Hulhumalé, Maldives with a plain-language daily briefing on what to expect and how to plan your day. An HDC open data project." />
+  <meta name="author" content="Ahmed Afrah Ismail" />
+  <meta name="theme-color" content="#16a34a" />
+  <title>HDC Environmental Intelligence Dashboard</title>
+  <link rel="canonical" href="https://hml-env-db-net.vercel.app/" />
+
+  <!-- Favicons: .ico first for older browsers, .svg preferred by those that
+       support it, apple-touch-icon for an iOS home-screen shortcut. -->
+  <link rel="icon" href="favicon.ico" sizes="32x32" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+  <!-- Open Graph / Facebook / LinkedIn -->
+  <!-- og:image carries a ?v= version: social platforms cache the card by URL,
+       so bump it whenever og-image.png is regenerated. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="HDC Environmental Intelligence Dashboard" />
+  <meta property="og:title" content="HDC Environmental Intelligence Dashboard" />
+  <meta property="og:description" content="Live air quality, weather, tide and reef conditions for Hulhumalé, Maldives with a plain-language daily briefing on what to expect and how to plan your day. An HDC open data project." />
+  <meta property="og:url" content="https://hml-env-db-net.vercel.app/" />
+  <meta property="og:image" content="https://hml-env-db-net.vercel.app/og-image.png?v=2" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="HDC Environmental Intelligence Dashboard — air quality, weather, tides and reef heat stress for Hulhumalé, Maldives, read at a glance" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HDC Environmental Intelligence Dashboard" />
+  <meta name="twitter:description" content="Live air quality, weather, tide and reef conditions for Hulhumalé, Maldives with a plain-language daily briefing on what to expect and how to plan your day. An HDC open data project." />
+  <meta name="twitter:image" content="https://hml-env-db-net.vercel.app/og-image.png?v=2" />
+  <meta name="twitter:image:alt" content="HDC Environmental Intelligence Dashboard — air quality, weather, tides and reef heat stress for Hulhumalé, Maldives, read at a glance" />
+
+  <!-- Inter (matches the Stitch design) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0&display=swap" rel="stylesheet" />
+  <!-- MapLibre GL CSS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <!-- Dashboard styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Apache ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <!-- MapLibre GL JS -->
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <!-- SunCalc is not loaded here any more — its sun/moon math is ported to C#
+       (SunCalc.cs) and runs inside the .NET WebAssembly runtime. -->
+  <base href="/" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       SITE HEADER / HERO SUMMARY
+  ═══════════════════════════════════════ -->
+  <header class="site-header">
+    <div class="header-top">
+      <div class="header-identity">
+        <img class="header-logo" src="https://hdccdn.blob.core.windows.net/brand/hdc/HDCLOGO-01.png" alt="HDC Logo" />
+        <div class="header-titles">
+          <h1 class="site-title">HDC Open Data Environmental Intelligence Dashboard</h1>
+          <p class="site-subtitle">Developed by Socio-Environmental Planning Section &middot; Hulhumalé, Maldives &middot; 4.2105°N 73.5446°E</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <a class="nav-link" href="about.html">About</a>
+        <span class="last-updated-wrap">Updated: <time id="last-updated">—</time></span>
+        <button class="btn-refresh" id="btn-refresh" title="Refresh all data">
+          <span id="refresh-icon" aria-hidden="true">↻</span> Refresh
+        </button>
+      </div>
+    </div>
+
+  </header>
+
+  <main class="main-content">
+
+    <!-- DAILY BRIEFING — what to expect / do today -->
+    <section class="section" id="section-briefing" aria-labelledby="title-briefing">
+      <div class="briefing-card" id="briefing-card">
+        <header class="briefing-head">
+          <h2 class="briefing-headline" id="briefing-headline">Reading today's conditions…</h2>
+          <p class="briefing-sub" id="briefing-sub"></p>
+        </header>
+
+        <div class="cards">
+          <!-- AIR QUALITY -->
+          <article class="ocard" id="oc-aqi" style="--accent: var(--oc-green)">
+            <div class="card__top">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--oc-green);opacity:.16"></span>
+              <span class="badge badge--good">—</span>
+            </div>
+            <h3>Air quality</h3>
+            <p></p>
+            <div class="card__viz">
+              <div class="aqi"><span class="aqi__dot" id="aqiDot"></span></div>
+              <div class="scale-labels"><span>0</span><span>100</span><span>200+</span></div>
+            </div>
+          </article>
+
+          <!-- UV / SUN & HEAT -->
+          <article class="ocard" id="oc-uv" style="--accent: var(--oc-orange)">
+            <div class="card__top">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--oc-orange);box-shadow:0 0 0 5px rgba(245,129,62,.16)"></span>
+              <span class="badge badge--warn">—</span>
+            </div>
+            <h3>Sun &amp; heat</h3>
+            <p></p>
+            <div class="card__viz">
+              <div class="bars" id="uvBars"></div>
+              <div class="scale-labels"><span>6A</span><em>MIDDAY</em><span>6P</span></div>
+            </div>
+          </article>
+
+          <!-- RAIN -->
+          <article class="ocard" id="oc-rain" style="--accent: var(--oc-blue)">
+            <div class="card__top">
+              <span style="width:26px;height:16px;border-radius:9px;background:var(--oc-blue);opacity:.22"></span>
+              <span class="badge badge--warn">—</span>
+            </div>
+            <h3>Rain</h3>
+            <p></p>
+            <div class="card__viz">
+              <div class="bars bars--rain" id="rainBars"></div>
+              <div class="scale-labels"><span>NOW</span><span>+3H</span><span>+6H</span></div>
+            </div>
+          </article>
+
+          <!-- WIND / CROSSING THE BRIDGE -->
+          <article class="ocard" id="oc-wind" style="--accent: var(--oc-violet)">
+            <div class="card__top">
+              <span style="display:flex;flex-direction:column;gap:3px;width:26px">
+                <i style="height:3px;width:100%;border-radius:2px;background:var(--oc-violet);opacity:.7"></i>
+                <i style="height:3px;width:70%;border-radius:2px;background:var(--oc-violet);opacity:.45"></i>
+                <i style="height:3px;width:85%;border-radius:2px;background:var(--oc-violet);opacity:.25"></i>
+              </span>
+              <span class="badge badge--good">—</span>
+            </div>
+            <h3>Wind</h3>
+            <p></p>
+            <div class="card__viz">
+              <div class="bars" id="windBars"></div>
+              <div class="scale-labels"><span>NOW</span><span>+3H</span><span>+6H</span></div>
+              <div class="meta" id="windMeta"></div>
+            </div>
+          </article>
+
+          <!-- SEAS -->
+          <article class="ocard" id="oc-sea" style="--accent: var(--oc-teal)">
+            <div class="card__top">
+              <span style="display:flex;flex-direction:column;gap:3px;width:26px">
+                <i style="height:3px;border-radius:2px;background:var(--oc-teal);opacity:.7"></i>
+                <i style="height:3px;border-radius:2px;background:var(--oc-teal);opacity:.45"></i>
+                <i style="height:3px;border-radius:2px;background:var(--oc-teal);opacity:.25"></i>
+              </span>
+              <span class="badge badge--good">—</span>
+            </div>
+            <h3>Seas</h3>
+            <p></p>
+            <div class="card__viz">
+              <div class="swell" id="swell"></div>
+              <div class="meta" id="seaMeta"></div>
+            </div>
+          </article>
+
+          <!-- SWIMMING / TIDE -->
+          <article class="ocard" id="oc-swim" style="--accent: var(--oc-blue)">
+            <div class="card__top">
+              <span style="width:26px;height:16px;border-radius:9px;border:2px solid var(--oc-blue);opacity:.4"></span>
+              <span class="badge badge--info">—</span>
+            </div>
+            <h3>Swimming in the channel</h3>
+            <p></p>
+            <div class="card__viz">
+              <svg viewBox="0 0 200 44" preserveAspectRatio="none" style="width:100%;height:40px;overflow:visible">
+                <path id="tideCurve" fill="none" stroke="#cfe0f2" stroke-width="2.5" stroke-linecap="round"></path>
+                <line id="tideRule" y1="0" y2="44" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3 3" opacity=".5"></line>
+                <circle id="tideDot" r="4.5" fill="#fff" stroke="#3b82f6" stroke-width="3"></circle>
+              </svg>
+              <div class="scale-labels"><span id="tideLabelLeft">—</span><em id="tideLabelRight" style="color:#2b5fa8">—</em></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="cards cards--wide">
+          <!-- SUN CYCLE -->
+          <article class="ocard ocard--wide" id="oc-sun" style="--accent: var(--oc-orange)">
+            <div class="card__top">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--oc-orange);box-shadow:0 0 0 5px rgba(245,129,62,.16)"></span>
+              <span class="badge badge--info">SUN CYCLE</span>
+            </div>
+            <h3>Sunrise &amp; sunset</h3>
+            <p></p>
+            <div class="sun-panel">
+              <svg viewBox="0 0 320 118">
+                <defs>
+                  <linearGradient id="dayFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#f5813e" stop-opacity=".18"></stop>
+                    <stop offset="100%" stop-color="#f5813e" stop-opacity="0"></stop>
+                  </linearGradient>
+                </defs>
+                <path d="M14 96 Q 160 -14 306 96 L 14 96 Z" fill="url(#dayFill)"></path>
+                <path d="M14 96 Q 160 -14 306 96" fill="none" stroke="#f0c9a6" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"></path>
+                <path id="sunTravelled" fill="none" stroke="#f5813e" stroke-width="2.5" stroke-linecap="round"></path>
+                <line x1="0" y1="96" x2="320" y2="96" stroke="#e6d9c8" stroke-width="1.5"></line>
+                <circle cx="14" cy="96" r="4" fill="#fff" stroke="#f0b083" stroke-width="2.5"></circle>
+                <circle cx="306" cy="96" r="4" fill="#fff" stroke="#f0b083" stroke-width="2.5"></circle>
+                <circle id="sunGlow" r="13" fill="#f5813e" opacity=".16"></circle>
+                <circle id="sunDot" r="7" fill="#f5813e"></circle>
+              </svg>
+              <div class="readout">
+                <div><small id="sunriseDir">SUNRISE</small><b id="sunriseVal">—</b></div>
+                <div><small>DAYLIGHT LEFT</small><b class="hot" id="daylightLeft">—</b></div>
+                <div><small id="sunsetDir">SUNSET</small><b id="sunsetVal">—</b></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- LUNAR PHASE -->
+          <article class="ocard ocard--wide" id="oc-moon" style="--accent: var(--oc-violet)">
+            <div class="card__top">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--oc-violet);box-shadow:0 0 0 5px rgba(124,108,240,.14)"></span>
+              <span class="badge badge--lunar">LUNAR PHASE</span>
+            </div>
+            <h3>Moonrise &amp; moonset</h3>
+            <p></p>
+            <div class="moon-panel">
+              <div class="moon-panel__side">
+                <div class="moon moon--lg" id="moonDisc">
+                  <span class="moon__half"></span>
+                  <span class="moon__term"></span>
+                  <span class="moon__crater" style="left:26px;top:28px;width:16px;height:16px;background:rgba(120,112,96,.16)"></span>
+                  <span class="moon__crater" style="left:52px;top:18px;width:9px;height:9px"></span>
+                  <span class="moon__crater" style="left:44px;top:58px;width:22px;height:22px;background:rgba(120,112,96,.12)"></span>
+                  <span class="moon__crater" style="left:20px;top:60px;width:7px;height:7px"></span>
+                </div>
+                <div class="moon-caption"><b id="phaseName">—</b><span id="illumPct">—</span></div>
+              </div>
+              <div class="moon-panel__main">
+                <svg viewBox="0 0 300 96">
+                  <path d="M10 76 Q 150 -18 290 76" fill="none" stroke="rgba(226,222,255,.22)" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round"></path>
+                  <line x1="0" y1="76" x2="300" y2="76" stroke="rgba(226,222,255,.18)" stroke-width="1.5"></line>
+                  <circle cx="10" cy="76" r="4" fill="#2a2f57" stroke="#9aa2c8" stroke-width="2"></circle>
+                  <circle cx="290" cy="76" r="4" fill="#2a2f57" stroke="#9aa2c8" stroke-width="2"></circle>
+                  <circle id="moonGlow" r="12" fill="#efeada" opacity=".14"></circle>
+                  <circle id="moonDot" r="6" fill="#efeada"></circle>
+                </svg>
+                <div class="readout">
+                  <div><small id="moonriseDir">MOONRISE</small><b id="moonriseVal">—</b></div>
+                  <div><small id="moonsetDir">MOONSET</small><b id="moonsetVal">—</b></div>
+                </div>
+              </div>
+            </div>
+            <div class="phase-strip" id="phaseStrip"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEATHER -->
+    <section class="section" id="section-weather" aria-labelledby="title-weather">
+      <div class="section-header">
+        <h2 class="section-title" id="title-weather">Weather</h2>
+        <span class="pill pill-forecast">Forecast</span>
+        <span class="standard-note section-source">Open-Meteo</span>
+      </div>
+
+      <!-- Today large cards -->
+      <div class="today-grid" id="today-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Weekly outlook -->
+      <div class="subsection-head">
+        <h3 class="subsection-title">Weekly Weather Outlook</h3>
+      </div>
+      <div class="forecast-strip" id="forecast-strip">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Weather charts -->
+      <div class="chart-row two-col">
+        <div class="card chart-card">
+          <div class="card-label">Hourly Temperature</div>
+          <div id="chart-temp" class="chart-el" style="height:200px;"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">Hourly Wind Speed</div>
+          <div id="chart-wind" class="chart-el" style="height:200px;"></div>
+        </div>
+      </div>
+      <div class="chart-row two-col">
+        <div class="card chart-card">
+          <div class="card-label">Hourly Rain Probability</div>
+          <div id="chart-rain" class="chart-el" style="height:200px;"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">5-Day Rainfall Forecast</div>
+          <div id="chart-rain-5d" class="chart-el" style="height:200px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIDE & MARINE -->
+    <section class="section" id="section-marine" aria-labelledby="title-marine">
+      <div class="section-header">
+        <h2 class="section-title" id="title-marine">Tide &amp; Marine</h2>
+        <span class="pill pill-forecast">Forecast</span>
+        <span class="standard-note section-source" id="marine-source">Open-Meteo</span>
+      </div>
+
+      <div class="marine-card-grid" id="marine-card-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="chart-row one-col">
+        <div class="card chart-card">
+          <div class="card-label">Today's Tide Level</div>
+          <div id="chart-tide-today" class="chart-el" style="height:220px;"></div>
+        </div>
+      </div>
+      <div class="chart-row one-col">
+        <div class="card chart-card">
+          <div class="card-label">48-Hour Tide Forecast</div>
+          <div id="chart-tide-48h" class="chart-el" style="height:220px;"></div>
+        </div>
+      </div>
+      <div class="chart-row two-col">
+        <div class="card chart-card">
+          <div class="card-label">Wave Height</div>
+          <div id="chart-wave" class="chart-el" style="height:200px;"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">Sea Surface Temperature</div>
+          <div id="chart-sst" class="chart-el" style="height:200px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AIR QUALITY (model-based + local monitoring station, one card) -->
+    <section class="section" id="section-aqi" aria-labelledby="title-aqi">
+      <div class="section-header">
+        <h2 class="section-title" id="title-aqi">Air Quality</h2>
+        <span class="pill pill-live">Live</span>
+        <span class="standard-note section-source">Open-Meteo (CAMS)</span>
+      </div>
+
+      <div class="aqi-main-layout">
+        <!-- AQI Gauge -->
+        <div class="card aqi-gauge-card">
+          <div class="card-label">Overall Air Quality Index <span class="standard-note">US AQI</span></div>
+          <div id="chart-aqi-gauge" class="aqi-scale-host"></div>
+        </div>
+        <!-- Pollutant Cards -->
+        <div class="pollutant-grid" id="pollutant-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- AQI Trend Charts -->
+      <div class="chart-row two-col">
+        <div class="card chart-card">
+          <div class="card-label">24-Hour AQI Trend <span class="pill pill-live">Live</span></div>
+          <div id="chart-aqi-24h" class="chart-el" style="height:200px;"></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-label">72-Hour AQI Forecast <span class="pill pill-forecast">Forecast</span></div>
+          <div id="chart-aqi-72h" class="chart-el" style="height:200px;"></div>
+        </div>
+      </div>
+
+      <!-- Station Air Quality + national IQAir map — hidden for now until an IQAir
+           API key / embed whitelist is available. Remove the `hidden` attribute
+           on #station-aq below to re-enable (the JS honours it). -->
+      <div id="station-aq" hidden>
+      <!-- Local monitoring station (AirGradient) — folded into the Air Quality card -->
+      <div class="subsection-head">
+        <h3 class="subsection-title">Station Air Quality</h3>
+        <span class="pill" id="aqicn-pill">Checking…</span>
+      </div>
+      <div class="aqicn-layout">
+        <!-- Two live source readings, stacked -->
+        <div class="aqicn-sources">
+          <!-- AirGradient station reading -->
+          <div class="card aqicn-current" id="aqicn-current">
+            <div class="card-label">AirGradient — Malé station</div>
+            <div id="aqicn-current-body">
+              <p class="fallback-note">Loading station data…</p>
+            </div>
+          </div>
+          <!-- IQAir (Malé) reading via serverless proxy -->
+          <div class="card aqicn-current" id="iqair-current">
+            <div class="card-label">IQAir — Malé <span class="pill" id="iqair-pill">Checking…</span></div>
+            <div id="iqair-current-body">
+              <p class="fallback-note">Loading IQAir data…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Browsable history + period overview -->
+        <div class="card chart-card aqicn-history-card">
+          <div class="card-label">
+            PM2.5 &amp; AQI History
+            <span class="aqicn-range" id="aqicn-range" role="group" aria-label="History range">
+              <button type="button" class="range-btn" data-range="7">7d</button>
+              <button type="button" class="range-btn is-active" data-range="30">30d</button>
+              <button type="button" class="range-btn" data-range="90">90d</button>
+            </span>
+            <button type="button" class="range-btn ov-download" id="aqicn-csv" title="Download this data as CSV">↓ CSV</button>
+          </div>
+          <div id="chart-aqicn-history" class="chart-el" style="height:240px;"></div>
+          <div class="aqicn-overview" id="aqicn-overview"></div>
+          <p class="fallback-note" id="aqicn-history-note"></p>
+        </div>
+      </div>
+
+      <!-- National air quality map — IQAir custom embed (same map used on environment.gov.mv).
+           Public embeddable map, no API key required. -->
+      <div class="card iqair-map-card">
+        <div class="card-label">National Air Quality Map <span class="standard-note">IQAir · Maldives network</span></div>
+        <iframe id="iqair-map" class="iqair-map"
+                data-src="https://www.iqair.com/custom-embeddable-map/69cb578a8c2043cd88316f6c"
+                title="Maldives national air quality map by IQAir"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <p class="fallback-note" id="iqair-map-note">Live station map published by the Ministry of Climate Change, Environment &amp; Energy via IQAir. <a href="https://environment.gov.mv/en" target="_blank" rel="noopener">Open the national map ↗</a></p>
+      </div>
+      </div><!-- /#station-aq -->
+    </section>
+
+    <!-- CORAL BLEACHING WATCH -->
+    <section class="section" id="section-coral" aria-labelledby="title-coral">
+      <div class="section-header">
+        <h2 class="section-title" id="title-coral">Coral Bleaching Watch</h2>
+        <span class="pill" id="coral-data-pill">Checking…</span>
+        <span class="standard-note section-source">NOAA Coral Reef Watch</span>
+      </div>
+
+      <!-- Two-column layout: larger NOAA image on the left, info boxes + fallback beside it -->
+      <div class="coral-grid">
+        <!-- Live NOAA image (loads directly via <img>, which is not subject to the
+             CORS restriction that blocks the structured text feed) -->
+        <div class="card coral-noaa-card" id="coral-noaa-card">
+          <div class="card-label">
+            NOAA Coral Reef Watch — Maldives Virtual Station
+            <span class="pill pill-live">Live image</span>
+          </div>
+          <p class="fallback-note">Daily satellite-derived bleaching heat stress gauge and time series for the Maldives, published by NOAA Coral Reef Watch. Updated automatically each day.</p>
+          <a class="coral-noaa-imglink" href="https://coralreefwatch.noaa.gov/product/vs/gauges/maldives.php" target="_blank" rel="noopener noreferrer">
+            <img class="coral-noaa-img"
+                 src="https://coralreefwatch.noaa.gov/data/vs/ts_figures/vs_gauge_images/current/current_maldives_prod_quad_composite.png"
+                 alt="NOAA Coral Reef Watch Maldives bleaching heat stress gauge and time series, updated daily"
+                 referrerpolicy="no-referrer"
+                 onerror="this.closest('.coral-noaa-card').classList.add('img-failed')" />
+          </a>
+        </div>
+
+        <!-- Side column: JS-populated info boxes + fallback reference card -->
+        <div class="coral-side">
+          <div class="coral-layout" id="coral-layout">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Fallback card (shown if live data not accessible) -->
+          <div class="card coral-fallback-card" id="coral-fallback-card" style="display:none;">
+            <div class="card-label">Maldives Bleaching Watch — Reference <span class="pill pill-not-live">Not live</span></div>
+            <p class="fallback-note">The structured data feed is not directly accessible from the browser due to cross-origin restrictions. The live monitoring page is available via the link below.</p>
+            <a class="btn-external" href="https://coralreefwatch.noaa.gov/product/vs/gauges/maldives.php" target="_blank" rel="noopener noreferrer">Open Official Coral Watch Page ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- DHW trend chart (shown if data available) -->
+      <div class="chart-row one-col" id="coral-chart-row" style="display:none;">
+        <div class="card chart-card">
+          <div class="card-label">Degree Heating Weeks — Maldives</div>
+          <div id="chart-dhw" class="chart-el" style="height:200px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA STATUS -->
+    <section class="section" id="section-status" aria-labelledby="title-status">
+      <div class="section-header">
+        <h2 class="section-title" id="title-status">Data Status</h2>
+      </div>
+      <div class="status-table" id="status-table">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════ -->
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <img class="footer-logo" src="https://hdccdn.blob.core.windows.net/brand/hdc/HDCLOGO-01.png" alt="HDC Logo" />
+      <div>
+        <div class="footer-org">Housing Development Corporation (HDC)</div>
+        <div class="footer-division">Socio-Environmental Section | Planning Division</div>
+      </div>
+    </div>
+    <p class="footer-statement">Air-quality and tide readings come from local monitoring stations; weather, marine and coral layers are modelled or satellite-derived. This dashboard is for informational purposes only.</p>
+    <details class="sources-details">
+      <summary class="sources-summary">Data sources &amp; attribution</summary>
+      <ul class="sources-list">
+        <li><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> | Weather, air quality (CAMS-based) and marine forecasts. Free, open, no API key.</li>
+        <li><a href="https://geohub.msro.mv/tides" target="_blank" rel="noopener">MSRO GeoHub</a> | Live tide-gauge readings for Hulhumalé, 1-minute resolution.</li>
+        <li><a href="https://www.airgradient.com/" target="_blank" rel="noopener">AirGradient</a> | Live air-quality readings from the Malé (Galolhu) monitoring station, via their open API.</li>
+        <li><a href="https://aqicn.org/" target="_blank" rel="noopener">World Air Quality Index (WAQI)</a> | Historical PM2.5 time series for the Malé station.</li>
+        <li><a href="https://www.iqair.com/" target="_blank" rel="noopener">IQAir (AirVisual)</a> | Malé air-quality reading and the national air-quality map.</li>
+        <li><a href="https://environment.gov.mv/" target="_blank" rel="noopener">Ministry of Climate Change, Environment &amp; Energy</a> | Operates the national air-quality monitoring network.</li>
+        <li><a href="https://coralreefwatch.noaa.gov/" target="_blank" rel="noopener">NOAA Coral Reef Watch</a> | Maldives coral bleaching heat-stress gauge and alert status.</li>
+        <li><a href="https://github.com/mourner/suncalc" target="_blank" rel="noopener">SunCalc</a> | Sunrise, sunset and moon rise/set/phase, computed locally (MIT).</li>
+        <li><a href="https://echarts.apache.org/" target="_blank" rel="noopener">Apache ECharts</a> | Charting library (Apache-2.0).</li>
+        <li><a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> | Inter (OFL) and Material Symbols (Apache-2.0).</li>
+      </ul>
+    </details>
+    <p class="footer-copy">HDC Open Data Environmental Intelligence Dashboard | Data loaded from public environmental data services and live monitoring stations.</p>
+  </footer>
+
+  <!-- Presentation glue (ECharts/MapLibre bridges, canvas calendar, DOM utils) -->
+  <script src="app-interop.js"></script>
+  <!-- The dashboard itself: C# compiled to WebAssembly -->
+  <script src="_framework/blazor.webassembly.js"></script>
+  <script>
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') window.closePollutantInfo?.(); });
+  </script>
+</body>
+</html>

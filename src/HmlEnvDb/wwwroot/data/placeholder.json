@@ -1,0 +1,17 @@
+{
+  "_note": "Placeholder file. Live data is fetched at runtime from public APIs.",
+  "location": {
+    "name": "Hulhumalé",
+    "country": "Maldives",
+    "latitude": 4.2105,
+    "longitude": 73.5446,
+    "timezone": "Indian/Maldives"
+  },
+  "data_status": {
+    "weather": "live-forecast",
+    "air_quality": "live-forecast",
+    "marine": "live-forecast",
+    "coral": "not-live-browser",
+    "tree_cover": "not-live"
+  }
+}
